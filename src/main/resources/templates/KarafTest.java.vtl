@@ -1,0 +1,101 @@
+package $package;
+
+/* static methods in the classes CoreOptions and KarafDistributionOption provide you with the necessary
+| methods to setup your karaf container 
+*/
+ 
+import static org.ops4j.pax.exam.CoreOptions.maven;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.karafDistributionConfiguration;
+import static org.ops4j.pax.exam.karaf.options.KarafDistributionOption.keepRuntimeFolder;
+
+import java.io.File;
+import java.io.InputStream;
+import java.lang.reflect.Field;
+import java.nio.charset.Charset;
+
+import javax.inject.Inject;
+import javax.xml.bind.JAXB;
+
+import org.junit.Assert;
+import org.junit.Test;
+import org.junit.runner.RunWith;
+import org.ops4j.pax.exam.Configuration;
+import org.ops4j.pax.exam.CoreOptions;
+import org.ops4j.pax.exam.Option;
+import org.ops4j.pax.exam.junit.PaxExam;
+import org.ops4j.pax.exam.karaf.options.KarafDistributionOption;
+import org.ops4j.pax.exam.options.MavenArtifactUrlReference;
+import org.ops4j.pax.exam.options.MavenUrlReference;
+import org.ops4j.pax.tinybundles.core.BuildStrategy;
+import org.ops4j.pax.tinybundles.core.TinyBundles;
+import org.osgi.framework.Constants;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+
+@RunWith(PaxExam.class)
+public class $className {
+
+	private static Logger LOG = LoggerFactory.getLogger(${className}.class);
+
+	// @Inject
+	// you can inject the osgi service you want to test. First add a dependency to the project which implements the service in your pom
+
+
+	// the method annotated with the configuration annotation builds the karaf container
+	@Configuration
+	public Option[] config() {
+		MavenArtifactUrlReference karafUrl = maven()
+				.groupId("org.apache.karaf").artifactId("apache-karaf")
+				.version("$karafVersion").type("zip");
+
+		MavenUrlReference karafStandardRepo = maven()
+				.groupId("org.apache.karaf.features").artifactId("standard")
+				.classifier("features").type("xml").versionAsInProject();
+
+		/* you may point also to your own features file to be able to install your features to the karaf container
+		   versionAsInProject means that you also need a dependency to your features bundle in your pom and here the
+		   reference takes the version from your pom 
+		
+		MavenUrlReference myOwnRepo = maven()
+						.groupId("org.example").artifactId("my.features.artifactId")
+						.classifier("features").type("xml").versionAsInProject(); 				
+		*/
+
+
+		// if you are on windows you will need that because of a bug in pax exam
+		switchPlatformEncodingToUTF8();
+
+		return new Option[] {
+				// KarafDistributionOption.debugConfiguration("5005", true),
+				karafDistributionConfiguration().frameworkUrl(karafUrl)
+						.unpackDirectory(new File("target/exam"))
+						.useDeployFolder(false).karafVersion("$karafVersion"),
+				keepRuntimeFolder(),
+				
+				// add a feature to the karaf console				
+				// KarafDistributionOption.features(myOwnRepo,	"feature_to_install"),
+				
+		
+		// you may want to add a bundle to your karaf container:
+		// mavenBundle().groupId("org.ops4j.pax.exam.samples").artifactId("pax-exam-sample8-ds").versionAsInProject().start(),
+		};
+	}
+
+	@Test
+	public void test() {
+		Assert.fail("not implemented yet");
+	}
+
+	private void switchPlatformEncodingToUTF8() {
+		try {
+			System.setProperty("file.encoding", "UTF-8");
+			Field charset = Charset.class.getDeclaredField("defaultCharset");
+			charset.setAccessible(true);
+			charset.set(null, null);
+		} catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
+
+}
